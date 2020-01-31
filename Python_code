@@ -1,0 +1,57 @@
+import math
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+def cameraTest():
+    x = 0
+    y = 0
+    cap = cv2.VideoCapture(r'C:\Users\Welcome\Desktop\outputk.avi')
+    a = time.time()
+    # Read until video is completed
+    while(cap.isOpened()):
+      # Capture frame-by-frame
+      ret, img = cap.read()
+      if ret == True:
+
+        im = np.zeros((img.shape[0],img.shape[1]),dtype = int)
+        im = 0.6*img[:,:,0] + 0.2*img[:,:,1] + 0.2*img[:,:,2]
+        im = cv2.normalize(im.astype(int), None, 255,0, cv2.NORM_MINMAX, cv2.CV_8UC1)
+        #applying sharpnening
+        kernel_sharpening = np.array([[-1,-1,-1], 
+                                  [-1, 9,-1],
+                                  [-1,-1,-1]])
+        
+        sharpened = cv2.filter2D(im, -1, kernel_sharpening)
+        #applying blur
+        img3 = cv2.medianBlur(sharpened,5)
+        img3 = cv2.medianBlur(img3,15,3)
+        
+        img3 = cv2.Canny(img3,70,70)
+        #detecting circles
+        circles = cv2.HoughCircles(img3, cv2.HOUGH_GRADIENT, 2,1800)
+        
+        if circles is None:
+            continue
+        c = circles[0]
+        x=circles[0][0][0]
+        y=circles[0][0][1]
+        
+        circles = np.uint16(np.around(circles))
+        for i in circles[0,:]:
+            #draw the outer circle
+            cv2.circle(img3,(i[0],i[1]),i[2],(255,255,255),5)
+            #draw the center of the circle
+            cv2.circle(img3,(i[0],i[1]),2,(255,255,255),3)
+
+        if time.time()-a > 10 :
+            break
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+      else: 
+        break
+
+    cap.release()
+    cv2.destroyAllWindows()
+    return(x,y)
